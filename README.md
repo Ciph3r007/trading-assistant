@@ -10,20 +10,37 @@ git clone <repo-url>
 cd trading-assistant
 ```
 
-### 2. Create and activate the virtual environment
+### 2. Create the virtual environment (Python 3.12 required)
+
+`smartmoneyconcepts` depends on `numba`, which requires Python ≤ 3.12 and
+pre-built binaries. Use [`uv`](https://github.com/astral-sh/uv) to manage
+this without touching your system Python:
+
 ```bash
-python -m venv .venv
+# Install uv (once)
+pip install uv
 
-# Windows
-.venv\Scripts\activate
-
-# macOS / Linux
-source .venv/bin/activate
+# Download Python 3.12 and create the venv
+python -m uv python install 3.12
+python -m uv venv --python 3.12 .venv
 ```
 
 ### 3. Install dependencies
+
+`numba`/`llvmlite` must be installed from pre-built wheels (no C compiler needed):
+
 ```bash
-pip install -r requirements.txt
+# Windows — install numba wheel first, then everything else
+python -m uv pip install --python .venv/Scripts/python.exe --only-binary :all: numba
+python -m uv pip install --python .venv/Scripts/python.exe --no-deps smartmoneyconcepts
+python -m uv pip install --python .venv/Scripts/python.exe --only-binary :all: pandas scipy
+python -m uv pip install --python .venv/Scripts/python.exe fastapi "uvicorn[standard]" twelvedata ta python-dotenv
+```
+
+Then activate the venv for subsequent commands:
+```bash
+.venv\Scripts\activate   # Windows
+source .venv/bin/activate  # macOS / Linux
 ```
 
 ### 4. Configure your API key
