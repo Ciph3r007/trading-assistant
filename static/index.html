@@ -6,320 +6,154 @@
   <title>USOIL Dashboard</title>
   <script src="https://unpkg.com/lightweight-charts@5.0.0/dist/lightweight-charts.standalone.production.js"></script>
   <style>
-    /* ------------------------------------------------------------------ */
-    /* Reset & base                                                         */
-    /* ------------------------------------------------------------------ */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:          #0d1117;
-      --bg-surface:  #161b22;
-      --bg-card:     #1c2128;
-      --border:      #30363d;
-      --text:        #e6edf3;
-      --text-muted:  #8b949e;
-      --accent:      #58a6ff;
-      --green:       #3fb950;
-      --red:         #f85149;
-      --yellow:      #d29922;
-      --font:        'Segoe UI', system-ui, sans-serif;
+      --bg:         #0d1117;
+      --bg-surface: #161b22;
+      --bg-card:    #1c2128;
+      --border:     #30363d;
+      --text:       #e6edf3;
+      --text-muted: #8b949e;
+      --accent:     #58a6ff;
+      --green:      #3fb950;
+      --red:        #f85149;
+      --yellow:     #d29922;
+      --font:       'Segoe UI', system-ui, sans-serif;
     }
 
-    html, body {
-      height: 100%;
-      background: var(--bg);
-      color: var(--text);
-      font-family: var(--font);
-      font-size: 13px;
-      overflow: hidden;
-    }
+    html, body { height: 100%; background: var(--bg); color: var(--text);
+                 font-family: var(--font); font-size: 13px; overflow: hidden; }
 
-    /* ------------------------------------------------------------------ */
-    /* Layout                                                               */
-    /* ------------------------------------------------------------------ */
-    #app {
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-    }
+    #app { display: flex; flex-direction: column; height: 100vh; }
 
-    /* Top bar */
+    /* ── Top bar ─────────────────────────────────────────────────────────── */
     #topbar {
-      display: flex;
-      align-items: center;
-      gap: 12px;
+      display: flex; align-items: center; gap: 12px;
       padding: 8px 16px;
       background: var(--bg-surface);
       border-bottom: 1px solid var(--border);
       flex-shrink: 0;
     }
-
-    #symbol-label {
-      font-size: 15px;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      color: var(--text);
-      margin-right: 4px;
-    }
-
+    #symbol-label { font-size: 15px; font-weight: 700; letter-spacing: .5px; }
     .tf-btn {
-      padding: 4px 10px;
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      background: transparent;
-      color: var(--text-muted);
-      cursor: pointer;
-      font-size: 12px;
-      font-family: var(--font);
-      transition: background 0.15s, color 0.15s;
+      padding: 4px 10px; border: 1px solid var(--border); border-radius: 4px;
+      background: transparent; color: var(--text-muted); cursor: pointer;
+      font-size: 12px; font-family: var(--font); transition: background .15s, color .15s;
     }
     .tf-btn:hover  { background: var(--bg-card); color: var(--text); }
     .tf-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
 
     #session-badge {
-      padding: 3px 9px;
-      border-radius: 10px;
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.4px;
-      margin-left: 4px;
+      padding: 3px 9px; border-radius: 10px; font-size: 11px;
+      font-weight: 600; letter-spacing: .4px; margin-left: 4px;
     }
-    .session-london  { background: rgba(30,144,255,0.25); color: #60aaff; border: 1px solid rgba(30,144,255,0.4); }
-    .session-ny      { background: rgba(255,165,0,0.2);   color: #ffb347; border: 1px solid rgba(255,165,0,0.4); }
-    .session-asian   { background: rgba(120,80,200,0.2);  color: #bb86fc; border: 1px solid rgba(120,80,200,0.4); }
-    .session-off     { background: rgba(100,100,100,0.2); color: #8b949e; border: 1px solid rgba(100,100,100,0.4); }
+    .session-london { background: rgba(30,144,255,.25); color: #60aaff; border: 1px solid rgba(30,144,255,.4); }
+    .session-ny     { background: rgba(255,165,0,.2);   color: #ffb347; border: 1px solid rgba(255,165,0,.4); }
+    .session-asian  { background: rgba(120,80,200,.2);  color: #bb86fc; border: 1px solid rgba(120,80,200,.4); }
+    .session-off    { background: rgba(100,100,100,.2); color: #8b949e; border: 1px solid rgba(100,100,100,.4); }
+
+    #killzone-badge {
+      padding: 3px 9px; border-radius: 10px; font-size: 11px; font-weight: 600;
+      display: none;
+    }
+    .kz-london { background: rgba(30,144,255,.2); color: #60aaff;
+                 border: 1px solid rgba(30,144,255,.5); display: inline-block !important; }
+    .kz-ny     { background: rgba(255,165,0,.2);  color: #ffb347;
+                 border: 1px solid rgba(255,165,0,.5); display: inline-block !important; }
 
     #refresh-btn {
-      margin-left: auto;
-      padding: 5px 14px;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      color: var(--text);
-      cursor: pointer;
-      font-family: var(--font);
-      font-size: 12px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      transition: background 0.15s;
+      margin-left: auto; padding: 5px 14px; background: var(--bg-card);
+      border: 1px solid var(--border); border-radius: 4px; color: var(--text);
+      cursor: pointer; font-family: var(--font); font-size: 12px;
+      display: flex; align-items: center; gap: 6px; transition: background .15s;
     }
     #refresh-btn:hover { background: #2d333b; }
-    #refresh-btn.loading svg { animation: spin 0.8s linear infinite; }
+    #refresh-btn.loading svg { animation: spin .8s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    #status-bar {
-      font-size: 11px;
-      color: var(--text-muted);
-    }
+    #status-bar { font-size: 11px; color: var(--text-muted); }
     .stale-warn { color: var(--yellow) !important; }
 
-    /* Main body */
-    #body {
-      display: flex;
-      flex: 1;
-      overflow: hidden;
-    }
+    /* ── Body ────────────────────────────────────────────────────────────── */
+    #body { display: flex; flex: 1; overflow: hidden; }
 
-    /* Chart area */
-    #chart-area {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      min-width: 0;
-      padding: 0;
-    }
+    #chart-area { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    #main-chart { flex: 1; min-height: 0; }
 
-    #main-chart {
-      flex: 1;
-      min-height: 0;
-    }
-
-    /* Sidebar */
+    /* ── Sidebar ─────────────────────────────────────────────────────────── */
     #sidebar {
-      width: 300px;
-      flex-shrink: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 0;
-      border-left: 1px solid var(--border);
-      overflow-y: auto;
+      width: 300px; flex-shrink: 0; display: flex; flex-direction: column;
+      border-left: 1px solid var(--border); overflow-y: auto;
       background: var(--bg-surface);
     }
-
-    .card {
-      border-bottom: 1px solid var(--border);
-      padding: 14px 16px;
-    }
+    .card { border-bottom: 1px solid var(--border); padding: 14px 16px; }
     .card-title {
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.8px;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      margin-bottom: 10px;
+      font-size: 11px; font-weight: 600; letter-spacing: .8px;
+      text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px;
     }
 
-    /* ------------------------------------------------------------------ */
-    /* Bias card                                                            */
-    /* ------------------------------------------------------------------ */
-    #bias-direction {
-      font-size: 28px;
-      font-weight: 800;
-      letter-spacing: 1px;
-      margin-bottom: 6px;
-    }
+    /* Bias card */
+    #bias-direction { font-size: 28px; font-weight: 800; letter-spacing: 1px; margin-bottom: 6px; }
     .bias-bull { color: var(--green); }
     .bias-bear { color: var(--red); }
     .bias-neut { color: var(--text-muted); }
+    #bias-score-wrap { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    #bias-score-bar-bg { flex: 1; height: 4px; background: var(--border); border-radius: 2px; }
+    #bias-score-bar { height: 4px; border-radius: 2px; background: var(--accent); transition: width .4s; }
+    #bias-score-label { font-size: 11px; color: var(--text-muted); width: 40px; text-align: right; }
+    #bias-reasoning { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+    #bias-reasoning li { font-size: 12px; color: var(--text-muted); padding-left: 12px; position: relative; }
+    #bias-reasoning li::before { content: '•'; position: absolute; left: 0; color: var(--accent); }
 
-    #bias-score-wrap {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 10px;
-    }
-    #bias-score-bar-bg {
-      flex: 1;
-      height: 4px;
-      background: var(--border);
-      border-radius: 2px;
-    }
-    #bias-score-bar {
-      height: 4px;
-      border-radius: 2px;
-      background: var(--accent);
-      transition: width 0.4s;
-    }
-    #bias-score-label {
-      font-size: 11px;
-      color: var(--text-muted);
-      width: 32px;
-      text-align: right;
-    }
-
-    #bias-reasoning {
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    #bias-reasoning li {
-      font-size: 12px;
-      color: var(--text-muted);
-      padding-left: 12px;
-      position: relative;
-    }
-    #bias-reasoning li::before {
-      content: '•';
-      position: absolute;
-      left: 0;
-      color: var(--accent);
-    }
-
-    /* ------------------------------------------------------------------ */
-    /* Key levels card                                                      */
-    /* ------------------------------------------------------------------ */
-    #levels-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 11.5px;
-    }
+    /* Key levels card */
+    #levels-table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
     #levels-table th {
-      color: var(--text-muted);
-      font-weight: 600;
-      text-align: left;
-      padding: 2px 4px 6px;
-      border-bottom: 1px solid var(--border);
+      color: var(--text-muted); font-weight: 600; text-align: left;
+      padding: 2px 4px 6px; border-bottom: 1px solid var(--border);
     }
-    #levels-table td {
-      padding: 4px 4px;
-      border-bottom: 1px solid rgba(48,54,61,0.4);
-    }
-    .level-type {
-      display: inline-block;
-      padding: 1px 5px;
-      border-radius: 3px;
-      font-size: 10px;
-      font-weight: 600;
-    }
-    .lt-ob  { background: rgba(88,166,255,0.15); color: var(--accent); }
-    .lt-fvg { background: rgba(63,185,80,0.15);  color: var(--green); }
-    .lt-liq { background: rgba(210,153,34,0.15); color: var(--yellow); }
-    .lt-ses { background: rgba(248,81,73,0.15);  color: var(--red); }
+    #levels-table td { padding: 4px 4px; border-bottom: 1px solid rgba(48,54,61,.4); }
+    .level-type { display: inline-block; padding: 1px 5px; border-radius: 3px; font-size: 10px; font-weight: 600; }
+    .lt-ob  { background: rgba(88,166,255,.15); color: var(--accent); }
+    .lt-fvg { background: rgba(63,185,80,.15);  color: var(--green); }
+    .lt-liq { background: rgba(210,153,34,.15); color: var(--yellow); }
+    .lt-ses { background: rgba(248,81,73,.15);  color: var(--red); }
     .dir-sup { color: var(--green); font-size: 10px; }
     .dir-res { color: var(--red);   font-size: 10px; }
 
-    /* ------------------------------------------------------------------ */
-    /* Checklist card                                                       */
-    /* ------------------------------------------------------------------ */
+    /* Checklist card */
     #checklist-score {
-      font-size: 13px;
-      font-weight: 700;
-      margin-bottom: 10px;
-      padding: 4px 10px;
-      border-radius: 4px;
-      display: inline-block;
+      font-size: 13px; font-weight: 700; margin-bottom: 10px;
+      padding: 4px 10px; border-radius: 4px; display: inline-block;
     }
-    .score-good { background: rgba(63,185,80,0.15); color: var(--green); }
-    .score-mid  { background: rgba(210,153,34,0.15); color: var(--yellow); }
-    .score-bad  { background: rgba(248,81,73,0.15);  color: var(--red); }
-
-    #checklist-items {
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-    .cl-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 8px;
-      font-size: 12px;
-    }
+    .score-good { background: rgba(63,185,80,.15);  color: var(--green); }
+    .score-mid  { background: rgba(210,153,34,.15); color: var(--yellow); }
+    .score-bad  { background: rgba(248,81,73,.15);  color: var(--red); }
+    #checklist-items { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+    .cl-item { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; }
     .cl-icon { font-size: 13px; flex-shrink: 0; margin-top: 1px; }
-    .cl-name { color: var(--text); }
     .cl-detail { color: var(--text-muted); font-size: 11px; margin-top: 1px; }
 
-    /* ------------------------------------------------------------------ */
-    /* Notes card                                                           */
-    /* ------------------------------------------------------------------ */
+    /* Notes card */
     #notes-area {
-      width: 100%;
-      min-height: 90px;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      color: var(--text);
-      font-family: var(--font);
-      font-size: 12px;
-      padding: 8px;
-      resize: vertical;
+      width: 100%; min-height: 90px; background: var(--bg);
+      border: 1px solid var(--border); border-radius: 4px;
+      color: var(--text); font-family: var(--font); font-size: 12px;
+      padding: 8px; resize: vertical;
     }
     #notes-area:focus { outline: 1px solid var(--accent); }
     #notes-date { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
 
-    /* ------------------------------------------------------------------ */
-    /* Toast alerts                                                         */
-    /* ------------------------------------------------------------------ */
+    /* Toast */
     #toast-container {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      z-index: 9999;
+      position: fixed; bottom: 20px; right: 20px;
+      display: flex; flex-direction: column; gap: 8px; z-index: 9999;
     }
     .toast {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-left: 3px solid var(--yellow);
-      border-radius: 4px;
-      padding: 10px 14px;
-      font-size: 12px;
-      max-width: 260px;
-      animation: slideIn 0.2s ease;
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-left: 3px solid var(--yellow); border-radius: 4px;
+      padding: 10px 14px; font-size: 12px; max-width: 260px;
+      animation: slideIn .2s ease;
     }
     @keyframes slideIn { from { transform: translateX(40px); opacity: 0; } }
     .toast-title { font-weight: 600; margin-bottom: 2px; }
@@ -328,21 +162,17 @@
 </head>
 <body>
 <div id="app">
-
-  <!-- Top bar -->
   <div id="topbar">
     <span id="symbol-label">WTI CRUDE / USOIL</span>
-
     <div style="display:flex;gap:4px;">
       <button class="tf-btn active" data-tf="15m">15m</button>
       <button class="tf-btn"        data-tf="1H">1H</button>
       <button class="tf-btn"        data-tf="4H">4H</button>
       <button class="tf-btn"        data-tf="D">D</button>
     </div>
-
     <span id="session-badge">—</span>
+    <span id="killzone-badge"></span>
     <span id="status-bar"></span>
-
     <button id="refresh-btn">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
         <polyline points="23 4 23 10 17 10"></polyline>
@@ -352,18 +182,12 @@
     </button>
   </div>
 
-  <!-- Body -->
   <div id="body">
-
-    <!-- Chart area -->
     <div id="chart-area">
       <div id="main-chart"></div>
     </div>
 
-    <!-- Sidebar -->
     <div id="sidebar">
-
-      <!-- Bias card -->
       <div class="card" id="bias-card">
         <div class="card-title">Directional Bias</div>
         <div id="bias-direction" class="bias-neut">—</div>
@@ -374,25 +198,16 @@
         <ul id="bias-reasoning"><li>Loading…</li></ul>
       </div>
 
-      <!-- Key levels card -->
       <div class="card" id="levels-card">
         <div class="card-title">Key Levels</div>
         <table id="levels-table">
-          <thead>
-            <tr>
-              <th>Type</th>
-              <th>Dir</th>
-              <th>Price</th>
-              <th>Dist</th>
-            </tr>
-          </thead>
+          <thead><tr><th>Type</th><th>Dir</th><th>Price</th><th>Dist</th></tr></thead>
           <tbody id="levels-tbody">
             <tr><td colspan="4" style="color:var(--text-muted);padding:8px 4px;">Loading…</td></tr>
           </tbody>
         </table>
       </div>
 
-      <!-- Checklist card -->
       <div class="card" id="checklist-card">
         <div class="card-title">ICT Setup Checklist</div>
         <div id="checklist-score" class="score-bad">0/7 conditions met</div>
@@ -401,44 +216,154 @@
         </ul>
       </div>
 
-      <!-- Trade notes -->
       <div class="card">
         <div class="card-title">Trade Notes</div>
         <div id="notes-date"></div>
         <textarea id="notes-area" placeholder="Your observations, trade ideas, confluences…"></textarea>
       </div>
-
-    </div><!-- /sidebar -->
-  </div><!-- /body -->
-</div><!-- /app -->
-
+    </div>
+  </div>
+</div>
 <div id="toast-container"></div>
 
 <script>
-/* ========================================================================
-   USOIL Dashboard — Phase 1 Frontend
-   Uses TradingView Lightweight Charts v5 (native multi-pane)
-   ======================================================================== */
+/* ============================================================================
+   USOIL Dashboard — Phase 3 Frontend
+   TradingView Lightweight Charts v5 · native multi-pane
+   ============================================================================ */
 
-const { createChart, CandlestickSeries, LineSeries } = LightweightCharts;
+const {
+  createChart, CandlestickSeries, LineSeries,
+  LineStyle, createSeriesMarkers,
+} = LightweightCharts;
 
-// ---------------------------------------------------------------------------
+// ── Geometry helpers ─────────────────────────────────────────────────────────
+const CHART_EL  = () => document.getElementById('main-chart');
+const CHART_W   = () => CHART_EL().clientWidth;
+
+// ============================================================================
+// Series Primitives
+// ============================================================================
+
+// ── ZonePrimitive: horizontal filled rectangle (OBs, FVGs) ──────────────────
+class ZonePrimitive {
+  constructor(topPrice, bottomPrice, startTime, endTime, fillColor, borderColor = null) {
+    this._d = { topPrice, bottomPrice, startTime, endTime, fillColor, borderColor };
+    this._chart = null; this._series = null;
+  }
+  attached({ chart, series }) { this._chart = chart; this._series = series; }
+  detached() { this._chart = null; this._series = null; }
+  updateAllViews() {}
+  paneViews() {
+    return [{ renderer: () => ({ draw: t => this._draw(t) }), zOrder: () => 'bottom' }];
+  }
+  _draw(target) {
+    const { _chart: c, _series: s, _d: d } = this;
+    if (!c || !s) return;
+    const ts = c.timeScale();
+    const y1 = s.priceToCoordinate(d.topPrice);
+    const y2 = s.priceToCoordinate(d.bottomPrice);
+    if (y1 === null || y2 === null) return;
+    let x1 = ts.timeToCoordinate(d.startTime) ?? 0;
+    let x2 = d.endTime ? (ts.timeToCoordinate(d.endTime) ?? CHART_W()) : CHART_W();
+    if (x1 > CHART_W() || x2 < 0) return;
+    x1 = Math.max(0, x1); x2 = Math.min(CHART_W(), x2);
+    target.useMediaCoordinateSpace(({ context: ctx }) => {
+      const top = Math.min(y1, y2), h = Math.abs(y2 - y1);
+      ctx.fillStyle = d.fillColor;
+      ctx.fillRect(x1, top, x2 - x1, h);
+      if (d.borderColor) {
+        ctx.strokeStyle = d.borderColor; ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1); ctx.lineTo(x2, y1);
+        ctx.moveTo(x1, y2); ctx.lineTo(x2, y2);
+        ctx.stroke();
+      }
+    });
+  }
+}
+
+// ── VertBandPrimitive: vertical time-based shaded band (kill zones) ──────────
+class VertBandPrimitive {
+  constructor(startTime, endTime, fillColor) {
+    this._d = { startTime, endTime, fillColor };
+    this._chart = null;
+  }
+  attached({ chart }) { this._chart = chart; }
+  detached() { this._chart = null; }
+  updateAllViews() {}
+  paneViews() {
+    return [{ renderer: () => ({ draw: t => this._draw(t) }), zOrder: () => 'bottom' }];
+  }
+  _draw(target) {
+    if (!this._chart) return;
+    const ts = this._chart.timeScale();
+    const { startTime, endTime, fillColor } = this._d;
+    const rawX1 = ts.timeToCoordinate(startTime);
+    const rawX2 = ts.timeToCoordinate(endTime);
+    if (rawX1 === null && rawX2 === null) return;
+    const x1 = Math.max(0, rawX1 ?? 0);
+    const x2 = Math.min(CHART_W(), rawX2 ?? CHART_W());
+    if (x1 >= x2) return;
+    target.useMediaCoordinateSpace(({ context: ctx }) => {
+      ctx.fillStyle = fillColor;
+      ctx.fillRect(x1, 0, x2 - x1, 9999);
+    });
+  }
+}
+
+// ── DivLinePrimitive: diagonal line connecting two divergence swing points ───
+class DivLinePrimitive {
+  constructor(pt1, pt2, color, label) {
+    this._d = { pt1, pt2, color, label };
+    this._chart = null; this._series = null;
+  }
+  attached({ chart, series }) { this._chart = chart; this._series = series; }
+  detached() { this._chart = null; this._series = null; }
+  updateAllViews() {}
+  paneViews() {
+    return [{ renderer: () => ({ draw: t => this._draw(t) }), zOrder: () => 'top' }];
+  }
+  _draw(target) {
+    const { _chart: c, _series: s, _d: d } = this;
+    if (!c || !s) return;
+    const ts = c.timeScale();
+    const x1 = ts.timeToCoordinate(d.pt1.time);
+    const y1 = s.priceToCoordinate(d.pt1.value);
+    const x2 = ts.timeToCoordinate(d.pt2.time);
+    const y2 = s.priceToCoordinate(d.pt2.value);
+    if (x1 === null || y1 === null || x2 === null || y2 === null) return;
+    target.useMediaCoordinateSpace(({ context: ctx }) => {
+      ctx.strokeStyle = d.color; ctx.lineWidth = 1.5;
+      ctx.setLineDash([5, 4]);
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+      ctx.setLineDash([]);
+      if (d.label) {
+        ctx.fillStyle = d.color;
+        ctx.font = 'bold 10px Segoe UI, system-ui, sans-serif';
+        ctx.fillText(d.label, (x1 + x2) / 2, Math.min(y1, y2) - 5);
+      }
+    });
+  }
+}
+
+// ============================================================================
 // State
-// ---------------------------------------------------------------------------
-let chart       = null;
-let candleSeries = null;
-let currentTf   = '15m';
-let lastData    = null;
-let refreshTimer = null;
+// ============================================================================
+let chart, candleSeries, rsiSeries, rsi70Series, rsi30Series;
+let markersHandle = null;
+let activeZones = [], activePricelines = [], activeKillZones = [];
+let activeRsiDivs = [], activePriceDivs = [];
+let currentTf = '15m', lastData = null, refreshTimer = null;
 let alertedLevels = new Set();
 
 const REFRESH_MS = { '15m': 60_000, '1H': 120_000, '4H': 300_000, 'D': 600_000 };
 
-// ---------------------------------------------------------------------------
+// ============================================================================
 // Chart initialisation
-// ---------------------------------------------------------------------------
+// ============================================================================
 function initChart() {
-  const container = document.getElementById('main-chart');
+  const container = CHART_EL();
 
   chart = createChart(container, {
     layout: {
@@ -455,44 +380,205 @@ function initChart() {
       vertLine: { color: '#444c56', labelBackgroundColor: '#2d333b' },
       horzLine: { color: '#444c56', labelBackgroundColor: '#2d333b' },
     },
-    rightPriceScale: {
-      borderColor:     '#30363d',
-      textColor:       '#8b949e',
-      minimumWidth:    70,
-    },
-    timeScale: {
-      borderColor:     '#30363d',
-      textColor:       '#8b949e',
-      timeVisible:     true,
-      secondsVisible:  false,
-    },
-    handleScroll: true,
-    handleScale:  true,
+    rightPriceScale: { borderColor: '#30363d', textColor: '#8b949e', minimumWidth: 70 },
+    timeScale:       { borderColor: '#30363d', textColor: '#8b949e', timeVisible: true, secondsVisible: false },
+    handleScroll: true, handleScale: true,
   });
 
+  // Main candlestick series (pane 0)
   candleSeries = chart.addSeries(CandlestickSeries, {
-    upColor:          '#3fb950',
-    downColor:        '#f85149',
-    borderUpColor:    '#3fb950',
-    borderDownColor:  '#f85149',
-    wickUpColor:      '#3fb950',
-    wickDownColor:    '#f85149',
+    upColor: '#3fb950', downColor: '#f85149',
+    borderUpColor: '#3fb950', borderDownColor: '#f85149',
+    wickUpColor: '#3fb950', wickDownColor: '#f85149',
   });
 
-  // Resize observer
+  // RSI series (pane 1 — native v5 multi-pane)
+  rsiSeries = chart.addSeries(LineSeries, {
+    color: '#7B61FF', lineWidth: 1.5,
+    priceScaleId: 'right',
+    title: 'RSI(14)',
+    lastValueVisible: true,
+    priceLineVisible: false,
+  }, 1);
+
+  // RSI overbought / oversold reference lines (pane 1)
+  rsi70Series = chart.addSeries(LineSeries, {
+    color: 'rgba(248,81,73,0.35)', lineWidth: 1,
+    lineStyle: LineStyle.Dashed, priceLineVisible: false,
+    lastValueVisible: false,
+  }, 1);
+  rsi30Series = chart.addSeries(LineSeries, {
+    color: 'rgba(63,185,80,0.35)', lineWidth: 1,
+    lineStyle: LineStyle.Dashed, priceLineVisible: false,
+    lastValueVisible: false,
+  }, 1);
+
   new ResizeObserver(() => {
-    if (chart) {
-      chart.applyOptions({
-        width:  container.clientWidth,
-        height: container.clientHeight,
-      });
-    }
+    if (chart) chart.applyOptions({ width: container.clientWidth, height: container.clientHeight });
   }).observe(container);
 }
 
-// ---------------------------------------------------------------------------
+// ============================================================================
+// Overlay management
+// ============================================================================
+function cleanOverlays() {
+  activeZones.forEach(p => candleSeries.detachPrimitive(p));
+  activeZones = [];
+  activePricelines.forEach(pl => candleSeries.removePriceLine(pl));
+  activePricelines = [];
+  activeKillZones.forEach(p => candleSeries.detachPrimitive(p));
+  activeKillZones = [];
+  activePriceDivs.forEach(p => candleSeries.detachPrimitive(p));
+  activePriceDivs = [];
+  if (rsiSeries) {
+    activeRsiDivs.forEach(p => rsiSeries.detachPrimitive(p));
+    activeRsiDivs = [];
+  }
+  if (markersHandle) {
+    try { markersHandle.setMarkers([]); } catch (_) {}
+    markersHandle = null;
+  }
+}
+
+function renderOverlays(data) {
+  const tf = data.timeframe;
+  renderOrderBlocks(data.order_blocks || []);
+  renderFVGs(data.fvg || []);
+  renderLiquidityLines(data.liquidity_levels || []);
+  renderSessionLines(data.session_levels || {});
+  renderBosChoch(data.bos_choch || [], data.candles);
+  renderDivergences(data.divergences || []);
+  // Kill zones only make sense on short timeframes
+  if (tf === '15min' || tf === '1h') {
+    renderKillZones(data.kill_zones || []);
+  }
+}
+
+// ── Order Blocks ─────────────────────────────────────────────────────────────
+function renderOrderBlocks(obs) {
+  obs.forEach(ob => {
+    const isBull = ob.type === 'bullish';
+    const fill   = isBull ? 'rgba(63,185,80,0.12)' : 'rgba(248,81,73,0.12)';
+    const border = isBull ? 'rgba(63,185,80,0.5)'  : 'rgba(248,81,73,0.5)';
+    const p = new ZonePrimitive(ob.top, ob.bottom, ob.start_time, ob.end_time, fill, border);
+    candleSeries.attachPrimitive(p);
+    activeZones.push(p);
+  });
+}
+
+// ── Fair Value Gaps ──────────────────────────────────────────────────────────
+function renderFVGs(fvgs) {
+  fvgs.forEach(fvg => {
+    const isBull = fvg.type === 'bullish';
+    const fill   = isBull ? 'rgba(0,200,220,0.10)' : 'rgba(200,80,220,0.10)';
+    const border = isBull ? 'rgba(0,200,220,0.35)'  : 'rgba(200,80,220,0.35)';
+    const p = new ZonePrimitive(fvg.top, fvg.bottom, fvg.start_time, null, fill, border);
+    candleSeries.attachPrimitive(p);
+    activeZones.push(p);
+  });
+}
+
+// ── Liquidity levels (dashed pricelines) ─────────────────────────────────────
+function renderLiquidityLines(levels) {
+  levels.forEach(liq => {
+    const isHigh = liq.type === 'high';
+    const pl = candleSeries.createPriceLine({
+      price:              liq.level,
+      color:              isHigh ? '#d29922' : '#58a6ff',
+      lineWidth:          1,
+      lineStyle:          LineStyle.Dashed,
+      axisLabelVisible:   true,
+      title:              `${liq.label} (${liq.touches})`,
+    });
+    activePricelines.push(pl);
+  });
+}
+
+// ── Previous session levels (dotted pricelines) ───────────────────────────────
+function renderSessionLines(levels) {
+  const map = {
+    prev_london_high: { color: '#ffb347', title: 'Prev LDN H' },
+    prev_london_low:  { color: '#ffb347', title: 'Prev LDN L' },
+    prev_ny_high:     { color: '#f85149', title: 'Prev NY H'  },
+    prev_ny_low:      { color: '#f85149', title: 'Prev NY L'  },
+  };
+  Object.entries(map).forEach(([key, cfg]) => {
+    const price = levels[key];
+    if (price == null) return;
+    const pl = candleSeries.createPriceLine({
+      price, color: cfg.color, lineWidth: 1,
+      lineStyle: LineStyle.Dotted,
+      axisLabelVisible: true, title: cfg.title,
+    });
+    activePricelines.push(pl);
+  });
+}
+
+// ── BOS / CHoCH markers ───────────────────────────────────────────────────────
+function renderBosChoch(events, candles) {
+  if (!events.length || !createSeriesMarkers) return;
+  const markers = events
+    .filter(e => candles.some(c => c.time === e.time))
+    .map(e => ({
+      time:     e.time,
+      position: e.direction === 'bullish' ? 'belowBar' : 'aboveBar',
+      color:    e.direction === 'bullish' ? '#3fb950' : '#f85149',
+      shape:    e.type === 'CHoCH' ? 'arrowUp' : 'circle',
+      text:     e.type === 'CHoCH' ? `CHoCH` : 'BOS',
+      size:     1,
+    }));
+  if (markers.length) {
+    markersHandle = createSeriesMarkers(candleSeries, markers);
+  }
+}
+
+// ── Divergence lines ─────────────────────────────────────────────────────────
+function renderDivergences(divs) {
+  divs.forEach(div => {
+    const isBull = div.type === 'hidden_bullish';
+    const color  = isBull ? '#3fb950' : '#f85149';
+
+    // Price chart line (candleSeries)
+    const pp = div.price_points;
+    const pd = new DivLinePrimitive(pp[0], pp[1], color, div.label);
+    candleSeries.attachPrimitive(pd);
+    activePriceDivs.push(pd);
+
+    // RSI panel line
+    if (rsiSeries && div.rsi_points?.length === 2) {
+      const rp = div.rsi_points;
+      const rd = new DivLinePrimitive(rp[0], rp[1], color, null);
+      rsiSeries.attachPrimitive(rd);
+      activeRsiDivs.push(rd);
+    }
+  });
+}
+
+// ── Kill zone vertical bands ──────────────────────────────────────────────────
+function renderKillZones(zones) {
+  zones.forEach(kz => {
+    const p = new VertBandPrimitive(kz.start, kz.end, kz.color);
+    candleSeries.attachPrimitive(p);
+    activeKillZones.push(p);
+  });
+}
+
+// ============================================================================
+// RSI pane data
+// ============================================================================
+function renderRSI(data) {
+  if (!data.rsi || !rsiSeries) return;
+  rsiSeries.setData(data.rsi);
+
+  // RSI overbought/oversold flat lines using same time domain as candles
+  const times = data.candles.map(c => ({ time: c.time }));
+  rsi70Series.setData(times.map(t => ({ ...t, value: 70 })));
+  rsi30Series.setData(times.map(t => ({ ...t, value: 30 })));
+}
+
+// ============================================================================
 // Data fetching
-// ---------------------------------------------------------------------------
+// ============================================================================
 async function fetchData(tf, silent = false) {
   if (!silent) setLoading(true);
   try {
@@ -501,12 +587,28 @@ async function fetchData(tf, silent = false) {
     const data = await res.json();
     lastData = data;
 
-    renderChart(data);
-    renderSidebar(data);
+    // Update chart
+    cleanOverlays();
+    candleSeries.setData(data.candles);
+    renderRSI(data);
+    renderOverlays(data);
+    chart.timeScale().fitContent();
+
+    // Update sidebar
+    renderBias(data.bias);
+    renderLevels(data.key_levels, data.current_price);
+    renderChecklist(data.checklist);
     updateTopBar(data);
+
+    // Alerts
+    checkPriceAlerts(data.key_levels, data.current_price);
     scheduleAutoRefresh(tf);
 
-    setStatus(data.meta.stale ? '⚠ stale data' : `${data.meta.bar_count} bars`, data.meta.stale);
+    const errNote = data.meta.errors?.length ? ` · ${data.meta.errors.length} analysis error(s)` : '';
+    setStatus(
+      data.meta.stale ? `⚠ stale data${errNote}` : `${data.meta.bar_count} bars · ${data.meta.elapsed_ms}ms${errNote}`,
+      data.meta.stale,
+    );
   } catch (err) {
     console.error('fetchData error:', err);
     setStatus('⚠ fetch error', true);
@@ -515,71 +617,42 @@ async function fetchData(tf, silent = false) {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Chart rendering
-// ---------------------------------------------------------------------------
-function renderChart(data) {
-  if (!data.candles || !data.candles.length) return;
-  candleSeries.setData(data.candles);
-  chart.timeScale().fitContent();
-}
-
-// ---------------------------------------------------------------------------
+// ============================================================================
 // Sidebar rendering
-// ---------------------------------------------------------------------------
-function renderSidebar(data) {
-  renderBias(data.bias);
-  renderLevels(data.key_levels, data.current_price);
-  renderChecklist(data.checklist);
-}
-
+// ============================================================================
 function renderBias(bias) {
-  const el = document.getElementById('bias-direction');
+  const dir = document.getElementById('bias-direction');
   const bar = document.getElementById('bias-score-bar');
   const lbl = document.getElementById('bias-score-label');
-  const list = document.getElementById('bias-reasoning');
+  const lst = document.getElementById('bias-reasoning');
 
-  el.textContent = bias.direction;
-  el.className = {
-    BULLISH: 'bias-bull',
-    BEARISH: 'bias-bear',
-    NEUTRAL: 'bias-neut',
-  }[bias.direction] || 'bias-neut';
+  dir.textContent = bias.direction;
+  dir.className   = { BULLISH: 'bias-bull', BEARISH: 'bias-bear', NEUTRAL: 'bias-neut' }[bias.direction] || 'bias-neut';
 
   const pct = Math.max(0, Math.min(100, bias.score));
-  bar.style.width = pct + '%';
-  bar.style.background = bias.direction === 'BULLISH' ? '#3fb950'
-                        : bias.direction === 'BEARISH' ? '#f85149'
-                        : '#8b949e';
-  lbl.textContent = pct + '/100';
+  bar.style.width      = pct + '%';
+  bar.style.background = bias.direction === 'BULLISH' ? '#3fb950' : bias.direction === 'BEARISH' ? '#f85149' : '#8b949e';
+  lbl.textContent      = `${pct}/100`;
 
-  if (bias.reasoning && bias.reasoning.length) {
-    list.innerHTML = bias.reasoning
-      .map(r => `<li>${escHtml(r)}</li>`)
-      .join('');
-  } else {
-    list.innerHTML = '<li style="color:var(--text-muted)">Analysis pending…</li>';
-  }
+  lst.innerHTML = (bias.reasoning?.length)
+    ? bias.reasoning.map(r => `<li>${escHtml(r)}</li>`).join('')
+    : '<li style="color:var(--text-muted)">Analysis pending…</li>';
 }
 
 function renderLevels(levels, currentPrice) {
   const tbody = document.getElementById('levels-tbody');
-  if (!levels || !levels.length) {
-    tbody.innerHTML = '<tr><td colspan="4" style="color:var(--text-muted);padding:8px 4px;">No levels yet</td></tr>';
+  if (!levels?.length) {
+    tbody.innerHTML = '<tr><td colspan="4" style="color:var(--text-muted);padding:8px 4px;">No levels detected</td></tr>';
     return;
   }
-
   const typeClass = { OB: 'lt-ob', FVG: 'lt-fvg', Liquidity: 'lt-liq', Session: 'lt-ses' };
-
   tbody.innerHTML = levels.map(l => {
-    const cls = typeClass[l.type] || 'lt-ob';
-    const dirCls = l.direction === 'support' ? 'dir-sup' : 'dir-res';
-    const dist = currentPrice
-      ? (Math.abs(l.price - currentPrice) / currentPrice * 100).toFixed(2) + '%'
-      : '—';
+    const cls  = typeClass[l.type] || 'lt-ob';
+    const dCls = l.direction === 'support' ? 'dir-sup' : 'dir-res';
+    const dist = currentPrice ? `${(Math.abs(l.price - currentPrice) / currentPrice * 100).toFixed(2)}%` : '—';
     return `<tr>
       <td><span class="level-type ${cls}">${escHtml(l.type)}</span></td>
-      <td><span class="${dirCls}">${l.direction === 'support' ? 'SUP' : 'RES'}</span></td>
+      <td><span class="${dCls}">${l.direction === 'support' ? 'SUP' : 'RES'}</span></td>
       <td>${l.price.toFixed(2)}</td>
       <td>${dist}</td>
     </tr>`;
@@ -587,139 +660,147 @@ function renderLevels(levels, currentPrice) {
 }
 
 function renderChecklist(cl) {
-  if (!cl || !cl.items) return;
+  if (!cl?.items) return;
   const scoreEl = document.getElementById('checklist-score');
   const listEl  = document.getElementById('checklist-items');
 
   scoreEl.textContent = `${cl.score}/${cl.max} conditions met`;
-  scoreEl.className = 'checklist-score ' + (
-    cl.score >= 5 ? 'score-good' : cl.score >= 3 ? 'score-mid' : 'score-bad'
-  );
+  scoreEl.className   = `checklist-score ${cl.score >= 5 ? 'score-good' : cl.score >= 3 ? 'score-mid' : 'score-bad'}`;
 
-  if (!cl.items.length) {
-    listEl.innerHTML = '<li class="cl-item"><span class="cl-icon">⬜</span><div class="cl-name">Analysis pending…</div></li>';
-    return;
-  }
-
-  listEl.innerHTML = cl.items.map(item => {
-    const icon = item.status === 'pass' ? '✅' : item.status === 'partial' ? '🔸' : '⬜';
-    return `<li class="cl-item">
-      <span class="cl-icon">${icon}</span>
-      <div>
-        <div class="cl-name">${escHtml(item.name)}</div>
-        ${item.detail ? `<div class="cl-detail">${escHtml(item.detail)}</div>` : ''}
-      </div>
-    </li>`;
-  }).join('');
+  listEl.innerHTML = cl.items.length
+    ? cl.items.map(item => {
+        const icon = item.status === 'pass' ? '✅' : item.status === 'partial' ? '🔸' : '⬜';
+        return `<li class="cl-item">
+          <span class="cl-icon">${icon}</span>
+          <div>
+            <div class="cl-name">${escHtml(item.name)}</div>
+            ${item.detail ? `<div class="cl-detail">${escHtml(item.detail)}</div>` : ''}
+          </div>
+        </li>`;
+      }).join('')
+    : '<li class="cl-item"><span class="cl-icon">⬜</span><div class="cl-name">Analysis pending…</div></li>';
 }
 
-// ---------------------------------------------------------------------------
+// ============================================================================
 // Top bar
-// ---------------------------------------------------------------------------
-function updateTopBar(data) {
-  updateSessionBadge(data.session);
-}
+// ============================================================================
+function updateTopBar(data) { updateSessionBadge(data.session); updateKillZoneBadge(); }
 
 function updateSessionBadge(session) {
   const badge = document.getElementById('session-badge');
   const map = {
-    'London':   ['London Session',   'session-london'],
-    'New York': ['NY Session',        'session-ny'],
-    'Asian':    ['Asian Session',     'session-asian'],
-    'Off':      ['Off-Hours',         'session-off'],
+    'London':   ['London Session', 'session-london'],
+    'New York': ['NY Session',     'session-ny'],
+    'Asian':    ['Asian Session',  'session-asian'],
+    'Off':      ['Off-Hours',      'session-off'],
   };
   const [label, cls] = map[session] || ['—', 'session-off'];
-  badge.textContent = label;
-  badge.className = cls;
+  badge.textContent = label; badge.className = cls;
 }
 
-// Keep session badge live (updates every 60s without re-fetching)
+function updateKillZoneBadge() {
+  const h     = new Date(Date.now() - 5 * 3600_000).getUTCHours();
+  const badge = document.getElementById('killzone-badge');
+  if (h >= 2 && h < 5)  { badge.textContent = '🎯 London KZ'; badge.className = 'kz-london'; }
+  else if (h >= 7 && h < 10) { badge.textContent = '🎯 NY KZ'; badge.className = 'kz-ny'; }
+  else { badge.className = 'killzone-badge'; badge.style.display = 'none'; }
+}
+
 function startSessionClock() {
   function tick() {
     const h = new Date(Date.now() - 5 * 3600_000).getUTCHours();
-    const session = h >= 2 && h < 8   ? 'London'
-                  : h >= 8 && h < 17  ? 'New York'
-                  : (h >= 19 || h < 2) ? 'Asian'
-                  : 'Off';
-    updateSessionBadge(session);
+    updateSessionBadge(h >= 2 && h < 8 ? 'London' : h >= 8 && h < 17 ? 'New York' : h >= 19 || h < 2 ? 'Asian' : 'Off');
+    updateKillZoneBadge();
   }
   tick();
   setInterval(tick, 60_000);
 }
 
-// ---------------------------------------------------------------------------
+// ============================================================================
+// Price proximity alerts
+// ============================================================================
+function checkPriceAlerts(levels, currentPrice) {
+  if (!levels?.length || !currentPrice) return;
+  const PROXIMITY = 0.002; // 0.2%
+  levels.forEach(level => {
+    const key = `${level.price}`;
+    if (alertedLevels.has(key)) return;
+    if (Math.abs(level.price - currentPrice) / currentPrice <= PROXIMITY) {
+      alertedLevels.add(key);
+      const dir = level.direction === 'support' ? 'Support' : 'Resistance';
+      showToast(
+        `⚡ Price near ${level.type} ${dir}`,
+        `${level.price.toFixed(2)} — ${(Math.abs(level.price - currentPrice) / currentPrice * 100).toFixed(2)}% away`,
+      );
+      playAlertBeep();
+    }
+  });
+}
+
+function playAlertBeep() {
+  try {
+    const ctx  = new (window.AudioContext || window.webkitAudioContext)();
+    const osc  = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value = 880;
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+    osc.start(); osc.stop(ctx.currentTime + 0.4);
+  } catch (_) {}
+}
+
+// ============================================================================
 // Auto-refresh
-// ---------------------------------------------------------------------------
+// ============================================================================
 function scheduleAutoRefresh(tf) {
   if (refreshTimer) clearTimeout(refreshTimer);
-  const ms = REFRESH_MS[tf] ?? 120_000;
   refreshTimer = setTimeout(() => {
-    if (document.visibilityState === 'visible') {
-      fetchData(tf, true);
-    } else {
-      scheduleAutoRefresh(tf);
-    }
-  }, ms);
+    if (document.visibilityState === 'visible') fetchData(tf, true);
+    else scheduleAutoRefresh(tf);
+  }, REFRESH_MS[tf] ?? 120_000);
 }
 
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && currentTf) {
-    fetchData(currentTf, true);
-  }
+  if (document.visibilityState === 'visible' && currentTf) fetchData(currentTf, true);
 });
 
-// ---------------------------------------------------------------------------
-// UI helpers
-// ---------------------------------------------------------------------------
-function setLoading(on) {
-  document.getElementById('refresh-btn').classList.toggle('loading', on);
-}
-
+// ============================================================================
+// Helpers
+// ============================================================================
+function setLoading(on) { document.getElementById('refresh-btn').classList.toggle('loading', on); }
 function setStatus(msg, warn = false) {
   const el = document.getElementById('status-bar');
-  el.textContent = msg;
-  el.className = warn ? 'stale-warn' : '';
+  el.textContent = msg; el.className = warn ? 'stale-warn' : '';
+}
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-function escHtml(str) {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+function showToast(title, body, ms = 6000) {
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.innerHTML = `<div class="toast-title">${escHtml(title)}</div><div class="toast-body">${escHtml(body)}</div>`;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), ms);
 }
 
-// ---------------------------------------------------------------------------
-// Notes (localStorage)
-// ---------------------------------------------------------------------------
+// ============================================================================
+// Trade Notes (localStorage)
+// ============================================================================
 function initNotes() {
-  const area    = document.getElementById('notes-area');
-  const dateEl  = document.getElementById('notes-date');
-  const key     = 'usoil_notes_' + new Date().toISOString().slice(0, 10);
-
-  dateEl.textContent = new Date().toLocaleDateString(undefined, {
-    weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
-  });
-
+  const area   = document.getElementById('notes-area');
+  const dateEl = document.getElementById('notes-date');
+  const key    = 'usoil_notes_' + new Date().toISOString().slice(0, 10);
+  dateEl.textContent = new Date().toLocaleDateString(undefined,
+    { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
   area.value = localStorage.getItem(key) ?? '';
   area.addEventListener('input', () => localStorage.setItem(key, area.value));
 }
 
-// ---------------------------------------------------------------------------
-// Toast notifications
-// ---------------------------------------------------------------------------
-function showToast(title, body, durationMs = 5000) {
-  const wrap = document.getElementById('toast-container');
-  const el = document.createElement('div');
-  el.className = 'toast';
-  el.innerHTML = `<div class="toast-title">${escHtml(title)}</div>
-                  <div class="toast-body">${escHtml(body)}</div>`;
-  wrap.appendChild(el);
-  setTimeout(() => el.remove(), durationMs);
-}
-
-// ---------------------------------------------------------------------------
-// Timeframe buttons
-// ---------------------------------------------------------------------------
+// ============================================================================
+// Event listeners
+// ============================================================================
 document.querySelectorAll('.tf-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
@@ -730,13 +811,11 @@ document.querySelectorAll('.tf-btn').forEach(btn => {
   });
 });
 
-document.getElementById('refresh-btn').addEventListener('click', () => {
-  fetchData(currentTf);
-});
+document.getElementById('refresh-btn').addEventListener('click', () => fetchData(currentTf));
 
-// ---------------------------------------------------------------------------
+// ============================================================================
 // Boot
-// ---------------------------------------------------------------------------
+// ============================================================================
 initChart();
 initNotes();
 startSessionClock();
