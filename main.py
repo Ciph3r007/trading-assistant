@@ -17,6 +17,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from services.market_data import TF_MAP, get_service, init_service
+from services.analysis_engine import run_full_analysis
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO, format="%(levelname)s  %(name)s  %(message)s")
@@ -83,52 +84,57 @@ async def chart_data(timeframe: str):
 
     try:
         tf_data = svc.get_multi_tf_data(timeframe)
-        df = tf_data["current"]
-        stale = svc.is_stale(timeframe)
+        df      = tf_data["current"]
+        daily   = tf_data["daily"]
+        stale   = svc.is_stale(timeframe)
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc))
     except Exception as exc:
         logger.exception("Failed to fetch chart data for %s", timeframe)
         raise HTTPException(status_code=500, detail=str(exc))
 
-    from services.market_data import TF_MAP
     td_interval = TF_MAP.get(timeframe, timeframe)
 
-    # Build candle list for TradingView Lightweight Charts
-    # LW Charts expects {time: unix_timestamp, open, high, low, close}
-    candles = []
-    for _, row in df.iterrows():
-        candles.append({
-            "time": int(row["datetime"].timestamp()),
+    # Build candle list — LW Charts expects {time, open, high, low, close}
+    candles = [
+        {
+            "time":  int(row["datetime"].timestamp()),
             "open":  round(float(row["open"]),  3),
             "high":  round(float(row["high"]),  3),
             "low":   round(float(row["low"]),   3),
             "close": round(float(row["close"]), 3),
-        })
+        }
+        for _, row in df.iterrows()
+    ]
 
-    current_price = float(df["close"].iloc[-1]) if len(df) else None
+    current_price = float(df["close"].iloc[-1]) if len(df) else 0.0
+
+    # Run full analysis
+    analysis = run_full_analysis(df, daily)
 
     return JSONResponse({
-        "candles": candles,
-        "current_price": current_price,
-        "timeframe": td_interval,
-        "symbol": "WTI/USD",
-        # Phase 2 will populate these:
-        "rsi":              [],
-        "order_blocks":     [],
-        "fvg":              [],
-        "liquidity_levels": [],
-        "bos_choch":        [],
-        "divergences":      [],
-        "bias":             {"direction": "NEUTRAL", "score": 50, "reasoning": []},
-        "key_levels":       [],
-        "checklist":        {"score": 0, "max": 7, "items": []},
+        "candles":          candles,
+        "current_price":    current_price,
+        "timeframe":        td_interval,
+        "symbol":           "WTI/USD",
+        "rsi":              analysis["rsi"],
+        "order_blocks":     analysis["order_blocks"],
+        "fvg":              analysis["fvg"],
+        "liquidity_levels": analysis["liquidity_levels"],
+        "bos_choch":        analysis["bos_choch"],
+        "session_levels":   analysis["session_levels"],
+        "divergences":      analysis["divergences"],
+        "bias":             analysis["bias"],
+        "key_levels":       analysis["key_levels"],
+        "checklist":        analysis["checklist"],
         "session":          _current_session(),
         "kill_zones":       _kill_zones(),
         "meta": {
-            "stale":     stale,
-            "cached":    not stale,
-            "bar_count": len(candles),
+            "stale":       stale,
+            "cached":      not stale,
+            "bar_count":   len(candles),
+            "elapsed_ms":  analysis["_elapsed_ms"],
+            "errors":      analysis["_errors"],
             "cache_stats": svc.get_cache_stats(),
         },
     })
