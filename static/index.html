@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>USOIL Dashboard</title>
+  <script src="https://unpkg.com/lightweight-charts@5.0.0/dist/lightweight-charts.standalone.production.js"></script>
+  <style>
+    /* ------------------------------------------------------------------ */
+    /* Reset & base                                                         */
+    /* ------------------------------------------------------------------ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #0d1117;
+      --bg-surface:  #161b22;
+      --bg-card:     #1c2128;
+      --border:      #30363d;
+      --text:        #e6edf3;
+      --text-muted:  #8b949e;
+      --accent:      #58a6ff;
+      --green:       #3fb950;
+      --red:         #f85149;
+      --yellow:      #d29922;
+      --font:        'Segoe UI', system-ui, sans-serif;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 13px;
+      overflow: hidden;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Layout                                                               */
+    /* ------------------------------------------------------------------ */
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    /* Top bar */
+    #topbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 16px;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    #symbol-label {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: var(--text);
+      margin-right: 4px;
+    }
+
+    .tf-btn {
+      padding: 4px 10px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 12px;
+      font-family: var(--font);
+      transition: background 0.15s, color 0.15s;
+    }
+    .tf-btn:hover  { background: var(--bg-card); color: var(--text); }
+    .tf-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+    #session-badge {
+      padding: 3px 9px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.4px;
+      margin-left: 4px;
+    }
+    .session-london  { background: rgba(30,144,255,0.25); color: #60aaff; border: 1px solid rgba(30,144,255,0.4); }
+    .session-ny      { background: rgba(255,165,0,0.2);   color: #ffb347; border: 1px solid rgba(255,165,0,0.4); }
+    .session-asian   { background: rgba(120,80,200,0.2);  color: #bb86fc; border: 1px solid rgba(120,80,200,0.4); }
+    .session-off     { background: rgba(100,100,100,0.2); color: #8b949e; border: 1px solid rgba(100,100,100,0.4); }
+
+    #refresh-btn {
+      margin-left: auto;
+      padding: 5px 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text);
+      cursor: pointer;
+      font-family: var(--font);
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.15s;
+    }
+    #refresh-btn:hover { background: #2d333b; }
+    #refresh-btn.loading svg { animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #status-bar {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .stale-warn { color: var(--yellow) !important; }
+
+    /* Main body */
+    #body {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* Chart area */
+    #chart-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      padding: 0;
+    }
+
+    #main-chart {
+      flex: 1;
+      min-height: 0;
+    }
+
+    /* Sidebar */
+    #sidebar {
+      width: 300px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      border-left: 1px solid var(--border);
+      overflow-y: auto;
+      background: var(--bg-surface);
+    }
+
+    .card {
+      border-bottom: 1px solid var(--border);
+      padding: 14px 16px;
+    }
+    .card-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Bias card                                                            */
+    /* ------------------------------------------------------------------ */
+    #bias-direction {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+    .bias-bull { color: var(--green); }
+    .bias-bear { color: var(--red); }
+    .bias-neut { color: var(--text-muted); }
+
+    #bias-score-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    #bias-score-bar-bg {
+      flex: 1;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+    }
+    #bias-score-bar {
+      height: 4px;
+      border-radius: 2px;
+      background: var(--accent);
+      transition: width 0.4s;
+    }
+    #bias-score-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      width: 32px;
+      text-align: right;
+    }
+
+    #bias-reasoning {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    #bias-reasoning li {
+      font-size: 12px;
+      color: var(--text-muted);
+      padding-left: 12px;
+      position: relative;
+    }
+    #bias-reasoning li::before {
+      content: '•';
+      position: absolute;
+      left: 0;
+      color: var(--accent);
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Key levels card                                                      */
+    /* ------------------------------------------------------------------ */
+    #levels-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11.5px;
+    }
+    #levels-table th {
+      color: var(--text-muted);
+      font-weight: 600;
+      text-align: left;
+      padding: 2px 4px 6px;
+      border-bottom: 1px solid var(--border);
+    }
+    #levels-table td {
+      padding: 4px 4px;
+      border-bottom: 1px solid rgba(48,54,61,0.4);
+    }
+    .level-type {
+      display: inline-block;
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-size: 10px;
+      font-weight: 600;
+    }
+    .lt-ob  { background: rgba(88,166,255,0.15); color: var(--accent); }
+    .lt-fvg { background: rgba(63,185,80,0.15);  color: var(--green); }
+    .lt-liq { background: rgba(210,153,34,0.15); color: var(--yellow); }
+    .lt-ses { background: rgba(248,81,73,0.15);  color: var(--red); }
+    .dir-sup { color: var(--green); font-size: 10px; }
+    .dir-res { color: var(--red);   font-size: 10px; }
+
+    /* ------------------------------------------------------------------ */
+    /* Checklist card                                                       */
+    /* ------------------------------------------------------------------ */
+    #checklist-score {
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      padding: 4px 10px;
+      border-radius: 4px;
+      display: inline-block;
+    }
+    .score-good { background: rgba(63,185,80,0.15); color: var(--green); }
+    .score-mid  { background: rgba(210,153,34,0.15); color: var(--yellow); }
+    .score-bad  { background: rgba(248,81,73,0.15);  color: var(--red); }
+
+    #checklist-items {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .cl-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 12px;
+    }
+    .cl-icon { font-size: 13px; flex-shrink: 0; margin-top: 1px; }
+    .cl-name { color: var(--text); }
+    .cl-detail { color: var(--text-muted); font-size: 11px; margin-top: 1px; }
+
+    /* ------------------------------------------------------------------ */
+    /* Notes card                                                           */
+    /* ------------------------------------------------------------------ */
+    #notes-area {
+      width: 100%;
+      min-height: 90px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 12px;
+      padding: 8px;
+      resize: vertical;
+    }
+    #notes-area:focus { outline: 1px solid var(--accent); }
+    #notes-date { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+
+    /* ------------------------------------------------------------------ */
+    /* Toast alerts                                                         */
+    /* ------------------------------------------------------------------ */
+    #toast-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 9999;
+    }
+    .toast {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--yellow);
+      border-radius: 4px;
+      padding: 10px 14px;
+      font-size: 12px;
+      max-width: 260px;
+      animation: slideIn 0.2s ease;
+    }
+    @keyframes slideIn { from { transform: translateX(40px); opacity: 0; } }
+    .toast-title { font-weight: 600; margin-bottom: 2px; }
+    .toast-body  { color: var(--text-muted); }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- Top bar -->
+  <div id="topbar">
+    <span id="symbol-label">WTI CRUDE / USOIL</span>
+
+    <div style="display:flex;gap:4px;">
+      <button class="tf-btn active" data-tf="15m">15m</button>
+      <button class="tf-btn"        data-tf="1H">1H</button>
+      <button class="tf-btn"        data-tf="4H">4H</button>
+      <button class="tf-btn"        data-tf="D">D</button>
+    </div>
+
+    <span id="session-badge">—</span>
+    <span id="status-bar"></span>
+
+    <button id="refresh-btn">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <polyline points="23 4 23 10 17 10"></polyline>
+        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+      </svg>
+      Refresh
+    </button>
+  </div>
+
+  <!-- Body -->
+  <div id="body">
+
+    <!-- Chart area -->
+    <div id="chart-area">
+      <div id="main-chart"></div>
+    </div>
+
+    <!-- Sidebar -->
+    <div id="sidebar">
+
+      <!-- Bias card -->
+      <div class="card" id="bias-card">
+        <div class="card-title">Directional Bias</div>
+        <div id="bias-direction" class="bias-neut">—</div>
+        <div id="bias-score-wrap">
+          <div id="bias-score-bar-bg"><div id="bias-score-bar" style="width:50%"></div></div>
+          <span id="bias-score-label">—</span>
+        </div>
+        <ul id="bias-reasoning"><li>Loading…</li></ul>
+      </div>
+
+      <!-- Key levels card -->
+      <div class="card" id="levels-card">
+        <div class="card-title">Key Levels</div>
+        <table id="levels-table">
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Dir</th>
+              <th>Price</th>
+              <th>Dist</th>
+            </tr>
+          </thead>
+          <tbody id="levels-tbody">
+            <tr><td colspan="4" style="color:var(--text-muted);padding:8px 4px;">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Checklist card -->
+      <div class="card" id="checklist-card">
+        <div class="card-title">ICT Setup Checklist</div>
+        <div id="checklist-score" class="score-bad">0/7 conditions met</div>
+        <ul id="checklist-items">
+          <li class="cl-item"><span class="cl-icon">⬜</span><div><div class="cl-name">Loading…</div></div></li>
+        </ul>
+      </div>
+
+      <!-- Trade notes -->
+      <div class="card">
+        <div class="card-title">Trade Notes</div>
+        <div id="notes-date"></div>
+        <textarea id="notes-area" placeholder="Your observations, trade ideas, confluences…"></textarea>
+      </div>
+
+    </div><!-- /sidebar -->
+  </div><!-- /body -->
+</div><!-- /app -->
+
+<div id="toast-container"></div>
+
+<script>
+/* ========================================================================
+   USOIL Dashboard — Phase 1 Frontend
+   Uses TradingView Lightweight Charts v5 (native multi-pane)
+   ======================================================================== */
+
+const { createChart, CandlestickSeries, LineSeries } = LightweightCharts;
+
+// ---------------------------------------------------------------------------
+// State
+// ---------------------------------------------------------------------------
+let chart       = null;
+let candleSeries = null;
+let currentTf   = '15m';
+let lastData    = null;
+let refreshTimer = null;
+let alertedLevels = new Set();
+
+const REFRESH_MS = { '15m': 60_000, '1H': 120_000, '4H': 300_000, 'D': 600_000 };
+
+// ---------------------------------------------------------------------------
+// Chart initialisation
+// ---------------------------------------------------------------------------
+function initChart() {
+  const container = document.getElementById('main-chart');
+
+  chart = createChart(container, {
+    layout: {
+      background:  { color: '#0d1117' },
+      textColor:   '#8b949e',
+      fontSize:    11,
+      fontFamily:  'Segoe UI, system-ui, sans-serif',
+    },
+    grid: {
+      vertLines: { color: '#1c2128' },
+      horzLines: { color: '#1c2128' },
+    },
+    crosshair: {
+      vertLine: { color: '#444c56', labelBackgroundColor: '#2d333b' },
+      horzLine: { color: '#444c56', labelBackgroundColor: '#2d333b' },
+    },
+    rightPriceScale: {
+      borderColor:     '#30363d',
+      textColor:       '#8b949e',
+      minimumWidth:    70,
+    },
+    timeScale: {
+      borderColor:     '#30363d',
+      textColor:       '#8b949e',
+      timeVisible:     true,
+      secondsVisible:  false,
+    },
+    handleScroll: true,
+    handleScale:  true,
+  });
+
+  candleSeries = chart.addSeries(CandlestickSeries, {
+    upColor:          '#3fb950',
+    downColor:        '#f85149',
+    borderUpColor:    '#3fb950',
+    borderDownColor:  '#f85149',
+    wickUpColor:      '#3fb950',
+    wickDownColor:    '#f85149',
+  });
+
+  // Resize observer
+  new ResizeObserver(() => {
+    if (chart) {
+      chart.applyOptions({
+        width:  container.clientWidth,
+        height: container.clientHeight,
+      });
+    }
+  }).observe(container);
+}
+
+// ---------------------------------------------------------------------------
+// Data fetching
+// ---------------------------------------------------------------------------
+async function fetchData(tf, silent = false) {
+  if (!silent) setLoading(true);
+  try {
+    const res = await fetch(`/api/chart-data/${tf}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    lastData = data;
+
+    renderChart(data);
+    renderSidebar(data);
+    updateTopBar(data);
+    scheduleAutoRefresh(tf);
+
+    setStatus(data.meta.stale ? '⚠ stale data' : `${data.meta.bar_count} bars`, data.meta.stale);
+  } catch (err) {
+    console.error('fetchData error:', err);
+    setStatus('⚠ fetch error', true);
+  } finally {
+    if (!silent) setLoading(false);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Chart rendering
+// ---------------------------------------------------------------------------
+function renderChart(data) {
+  if (!data.candles || !data.candles.length) return;
+  candleSeries.setData(data.candles);
+  chart.timeScale().fitContent();
+}
+
+// ---------------------------------------------------------------------------
+// Sidebar rendering
+// ---------------------------------------------------------------------------
+function renderSidebar(data) {
+  renderBias(data.bias);
+  renderLevels(data.key_levels, data.current_price);
+  renderChecklist(data.checklist);
+}
+
+function renderBias(bias) {
+  const el = document.getElementById('bias-direction');
+  const bar = document.getElementById('bias-score-bar');
+  const lbl = document.getElementById('bias-score-label');
+  const list = document.getElementById('bias-reasoning');
+
+  el.textContent = bias.direction;
+  el.className = {
+    BULLISH: 'bias-bull',
+    BEARISH: 'bias-bear',
+    NEUTRAL: 'bias-neut',
+  }[bias.direction] || 'bias-neut';
+
+  const pct = Math.max(0, Math.min(100, bias.score));
+  bar.style.width = pct + '%';
+  bar.style.background = bias.direction === 'BULLISH' ? '#3fb950'
+                        : bias.direction === 'BEARISH' ? '#f85149'
+                        : '#8b949e';
+  lbl.textContent = pct + '/100';
+
+  if (bias.reasoning && bias.reasoning.length) {
+    list.innerHTML = bias.reasoning
+      .map(r => `<li>${escHtml(r)}</li>`)
+      .join('');
+  } else {
+    list.innerHTML = '<li style="color:var(--text-muted)">Analysis pending…</li>';
+  }
+}
+
+function renderLevels(levels, currentPrice) {
+  const tbody = document.getElementById('levels-tbody');
+  if (!levels || !levels.length) {
+    tbody.innerHTML = '<tr><td colspan="4" style="color:var(--text-muted);padding:8px 4px;">No levels yet</td></tr>';
+    return;
+  }
+
+  const typeClass = { OB: 'lt-ob', FVG: 'lt-fvg', Liquidity: 'lt-liq', Session: 'lt-ses' };
+
+  tbody.innerHTML = levels.map(l => {
+    const cls = typeClass[l.type] || 'lt-ob';
+    const dirCls = l.direction === 'support' ? 'dir-sup' : 'dir-res';
+    const dist = currentPrice
+      ? (Math.abs(l.price - currentPrice) / currentPrice * 100).toFixed(2) + '%'
+      : '—';
+    return `<tr>
+      <td><span class="level-type ${cls}">${escHtml(l.type)}</span></td>
+      <td><span class="${dirCls}">${l.direction === 'support' ? 'SUP' : 'RES'}</span></td>
+      <td>${l.price.toFixed(2)}</td>
+      <td>${dist}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderChecklist(cl) {
+  if (!cl || !cl.items) return;
+  const scoreEl = document.getElementById('checklist-score');
+  const listEl  = document.getElementById('checklist-items');
+
+  scoreEl.textContent = `${cl.score}/${cl.max} conditions met`;
+  scoreEl.className = 'checklist-score ' + (
+    cl.score >= 5 ? 'score-good' : cl.score >= 3 ? 'score-mid' : 'score-bad'
+  );
+
+  if (!cl.items.length) {
+    listEl.innerHTML = '<li class="cl-item"><span class="cl-icon">⬜</span><div class="cl-name">Analysis pending…</div></li>';
+    return;
+  }
+
+  listEl.innerHTML = cl.items.map(item => {
+    const icon = item.status === 'pass' ? '✅' : item.status === 'partial' ? '🔸' : '⬜';
+    return `<li class="cl-item">
+      <span class="cl-icon">${icon}</span>
+      <div>
+        <div class="cl-name">${escHtml(item.name)}</div>
+        ${item.detail ? `<div class="cl-detail">${escHtml(item.detail)}</div>` : ''}
+      </div>
+    </li>`;
+  }).join('');
+}
+
+// ---------------------------------------------------------------------------
+// Top bar
+// ---------------------------------------------------------------------------
+function updateTopBar(data) {
+  updateSessionBadge(data.session);
+}
+
+function updateSessionBadge(session) {
+  const badge = document.getElementById('session-badge');
+  const map = {
+    'London':   ['London Session',   'session-london'],
+    'New York': ['NY Session',        'session-ny'],
+    'Asian':    ['Asian Session',     'session-asian'],
+    'Off':      ['Off-Hours',         'session-off'],
+  };
+  const [label, cls] = map[session] || ['—', 'session-off'];
+  badge.textContent = label;
+  badge.className = cls;
+}
+
+// Keep session badge live (updates every 60s without re-fetching)
+function startSessionClock() {
+  function tick() {
+    const h = new Date(Date.now() - 5 * 3600_000).getUTCHours();
+    const session = h >= 2 && h < 8   ? 'London'
+                  : h >= 8 && h < 17  ? 'New York'
+                  : (h >= 19 || h < 2) ? 'Asian'
+                  : 'Off';
+    updateSessionBadge(session);
+  }
+  tick();
+  setInterval(tick, 60_000);
+}
+
+// ---------------------------------------------------------------------------
+// Auto-refresh
+// ---------------------------------------------------------------------------
+function scheduleAutoRefresh(tf) {
+  if (refreshTimer) clearTimeout(refreshTimer);
+  const ms = REFRESH_MS[tf] ?? 120_000;
+  refreshTimer = setTimeout(() => {
+    if (document.visibilityState === 'visible') {
+      fetchData(tf, true);
+    } else {
+      scheduleAutoRefresh(tf);
+    }
+  }, ms);
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && currentTf) {
+    fetchData(currentTf, true);
+  }
+});
+
+// ---------------------------------------------------------------------------
+// UI helpers
+// ---------------------------------------------------------------------------
+function setLoading(on) {
+  document.getElementById('refresh-btn').classList.toggle('loading', on);
+}
+
+function setStatus(msg, warn = false) {
+  const el = document.getElementById('status-bar');
+  el.textContent = msg;
+  el.className = warn ? 'stale-warn' : '';
+}
+
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+// ---------------------------------------------------------------------------
+// Notes (localStorage)
+// ---------------------------------------------------------------------------
+function initNotes() {
+  const area    = document.getElementById('notes-area');
+  const dateEl  = document.getElementById('notes-date');
+  const key     = 'usoil_notes_' + new Date().toISOString().slice(0, 10);
+
+  dateEl.textContent = new Date().toLocaleDateString(undefined, {
+    weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
+  });
+
+  area.value = localStorage.getItem(key) ?? '';
+  area.addEventListener('input', () => localStorage.setItem(key, area.value));
+}
+
+// ---------------------------------------------------------------------------
+// Toast notifications
+// ---------------------------------------------------------------------------
+function showToast(title, body, durationMs = 5000) {
+  const wrap = document.getElementById('toast-container');
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.innerHTML = `<div class="toast-title">${escHtml(title)}</div>
+                  <div class="toast-body">${escHtml(body)}</div>`;
+  wrap.appendChild(el);
+  setTimeout(() => el.remove(), durationMs);
+}
+
+// ---------------------------------------------------------------------------
+// Timeframe buttons
+// ---------------------------------------------------------------------------
+document.querySelectorAll('.tf-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentTf = btn.dataset.tf;
+    alertedLevels.clear();
+    fetchData(currentTf);
+  });
+});
+
+document.getElementById('refresh-btn').addEventListener('click', () => {
+  fetchData(currentTf);
+});
+
+// ---------------------------------------------------------------------------
+// Boot
+// ---------------------------------------------------------------------------
+initChart();
+initNotes();
+startSessionClock();
+fetchData(currentTf);
+</script>
+</body>
+</html>
