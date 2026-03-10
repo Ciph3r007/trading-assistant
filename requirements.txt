@@ -1,0 +1,9 @@
+fastapi>=0.110.0
+uvicorn[standard]>=0.27.0
+twelvedata>=1.2.20
+pandas>=2.2.0
+numpy>=1.26.0
+ta>=0.11.0
+smartmoneyconcepts>=0.0.20
+python-dotenv>=1.0.0
+scipy>=1.12.0
